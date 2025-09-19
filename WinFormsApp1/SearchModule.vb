@@ -356,10 +356,10 @@ Public Class SearchIndex
 
                 If ftsExists Then
                     ' Use FTS search
-                    cmd.CommandText = "SELECT FilePath, FileName, FileSize, LastModified, snippet(FileContent, 1, '...', '...', '...', 20) as Context
-                                      FROM FileIndex
-                                      JOIN FileContent ON FileIndex.FilePath = FileContent.FilePath
-                                      WHERE FileContent MATCH @term
+                    cmd.CommandText = "SELECT fi.FilePath, fi.FileName, fi.FileSize, fi.LastModified, snippet(fc, 1, '...', '...', '...', 20) as Context
+                                      FROM FileIndex fi
+                                      JOIN FileContent fc ON fi.FilePath = fc.FilePath
+                                      WHERE fc MATCH @term
                                       LIMIT 100"
                 Else
                     ' Fall back to LIKE search

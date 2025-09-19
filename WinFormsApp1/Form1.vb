@@ -393,17 +393,14 @@ Public Class Form1
             ' Update title and display the file
             Text = fullPath
 
-            ' Check if file exists and handle different file types
+            ' Check if file exists and display it
             If File.Exists(fullPath) Then
-                Dim extension = Path.GetExtension(fullPath).ToLower()
-
-                ' Handle Office documents
-                If IsOfficeDocument(extension) Then
-                    DisplayOfficeDocument(fullPath)
-                Else
-                    ' Display normally in WebView2
+                Try
+                    ' WebView2 can handle PDF, Office documents, and many other formats natively
                     WebView21.Source = New Uri(fullPath)
-                End If
+                Catch ex As Exception
+                    MessageBox.Show($"Cannot open file: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                End Try
             Else
                 MessageBox.Show($"File not found: {fullPath}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
             End If
@@ -413,39 +410,6 @@ Public Class Form1
         End If
     End Sub
 
-    Private Function IsOfficeDocument(extension As String) As Boolean
-        Dim officeExtensions = {".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx"}
-        Return officeExtensions.Contains(extension)
-    End Function
-
-    Private Sub DisplayOfficeDocument(filePath As String)
-        Try
-            Dim extension = Path.GetExtension(filePath).ToLower()
-            Dim htmlContent As String = ""
-
-            Select Case extension
-                Case ".docx", ".doc"
-                    htmlContent = ConvertWordToHtml(filePath)
-                Case ".xlsx", ".xls"
-                    htmlContent = ConvertExcelToHtml(filePath)
-                Case ".pptx", ".ppt"
-                    htmlContent = ConvertPowerPointToHtml(filePath)
-            End Select
-
-            If Not String.IsNullOrEmpty(htmlContent) Then
-                ' Create a temporary HTML file
-                Dim tempHtmlPath = Path.Combine(Path.GetTempPath(), $"preview_{Guid.NewGuid()}.html")
-                File.WriteAllText(tempHtmlPath, htmlContent)
-                WebView21.Source = New Uri(tempHtmlPath)
-            Else
-                ' Try to use Office Online viewer as fallback
-                Dim onlineViewerUrl = $"https://view.officeapps.live.com/op/view.aspx?src={Uri.EscapeDataString("file:///" & filePath.Replace("\", "/"))}"
-                WebView21.Source = New Uri(onlineViewerUrl)
-            End If
-        Catch ex As Exception
-            MessageBox.Show($"Cannot preview Office document: {ex.Message}", "Preview Error", MessageBoxButtons.OK, MessageBoxIcon.Information)
-        End Try
-    End Sub
 
     Private Function GetIconIndex(path As String, isDirectory As Boolean) As Integer
         Dim key As String
