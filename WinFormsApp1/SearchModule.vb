@@ -88,7 +88,7 @@ Public Class SearchModule
         Try
             ' Add files matching pattern
             For Each file In Directory.GetFiles(path)
-                If Path.GetFileName(file).ToLower().Contains(pattern.Replace("*", "").ToLower()) Then
+                If System.IO.Path.GetFileName(file).ToLower().Contains(pattern.Replace("*", "").ToLower()) Then
                     files.Add(file)
                 End If
             Next
@@ -99,8 +99,8 @@ Public Class SearchModule
             End If
 
             ' Recursively search subdirectories
-            For Each dir In Directory.GetDirectories(path)
-                SearchDirectory(dir, pattern, files, cancellationToken)
+            For Each myDir In Directory.GetDirectories(path)
+                SearchDirectory(myDir, pattern, files, cancellationToken)
             Next
         Catch ex As UnauthorizedAccessException
             ' Skip directories we can't access
