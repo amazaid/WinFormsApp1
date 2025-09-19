@@ -2,9 +2,12 @@
 Imports System.IO
 Imports System.Runtime.InteropServices
 Imports System.Linq
+Imports System.Threading.Tasks
 Imports Microsoft.Web.WebView2.Core
 
 Public Class Form1
+    Private _searchModule As SearchModule
+    Private _currentSearchTask As Task(Of List(Of SearchResult))
 
     ' --- Windows API Code for extracting file icons ---
 
@@ -92,6 +95,11 @@ Public Class Form1
         ' This ensures the underlying browser is ready before you try to use it.
         Await WebView21.EnsureCoreWebView2Async(Nothing)
 
+        ' Initialize search module
+        _searchModule = New SearchModule()
+        AddHandler _searchModule.SearchProgress, AddressOf OnSearchProgress
+        AddHandler _searchModule.SearchComplete, AddressOf OnSearchComplete
+
         ' Start by populating the TreeView with the computer's drives
         'PopulateDrives()
 
@@ -102,6 +110,138 @@ Public Class Form1
         ' Load the TreeView starting from that path
         LoadTreeFromPath(startPath)
 
+    End Sub
+
+    Private Async Sub SearchButton_Click(sender As Object, e As EventArgs) Handles SearchButton.Click
+        If String.IsNullOrWhiteSpace(SearchTextBox.Text) Then
+            MessageBox.Show("Please enter a search term", "Search", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+
+        ' Check if we have a selected path
+        Dim searchPath As String = ""
+        If tvFolders.SelectedNode IsNot Nothing Then
+            searchPath = CStr(tvFolders.SelectedNode.Tag)
+        Else
+            searchPath = "C:\"
+        End If
+
+        ' Disable search button and show progress
+        SearchButton.Enabled = False
+        SearchButton.Text = "Searching..."
+        SearchProgressBar.Visible = True
+        SearchProgressBar.Style = ProgressBarStyle.Marquee
+        SearchStatusLabel.Text = "Starting search..."
+
+        ' Clear previous results
+        lvFiles.Items.Clear()
+
+        Try
+            ' Start the search
+            _currentSearchTask = _searchModule.SearchAsync(
+                searchPath,
+                SearchTextBox.Text,
+                SearchContentCheckBox.Checked,
+                SearchPDFCheckBox.Checked
+            )
+
+            Dim results = Await _currentSearchTask
+
+            ' Display results
+            DisplaySearchResults(results)
+
+        Catch ex As Exception
+            MessageBox.Show($"Search error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        Finally
+            ' Re-enable search button
+            SearchButton.Enabled = True
+            SearchButton.Text = "Search"
+            SearchProgressBar.Visible = False
+            SearchStatusLabel.Text = $"Search complete. {lvFiles.Items.Count} results found."
+        End Try
+    End Sub
+
+    Private Sub OnSearchProgress(message As String, filesProcessed As Integer, totalFiles As Integer)
+        If InvokeRequired Then
+            Invoke(Sub() OnSearchProgress(message, filesProcessed, totalFiles))
+            Return
+        End If
+
+        SearchStatusLabel.Text = message
+        If totalFiles > 0 Then
+            SearchProgressBar.Style = ProgressBarStyle.Continuous
+            SearchProgressBar.Maximum = totalFiles
+            SearchProgressBar.Value = Math.Min(filesProcessed, totalFiles)
+        End If
+    End Sub
+
+    Private Sub OnSearchComplete(results As List(Of SearchResult))
+        If InvokeRequired Then
+            Invoke(Sub() OnSearchComplete(results))
+            Return
+        End If
+
+        DisplaySearchResults(results)
+    End Sub
+
+    Private Sub DisplaySearchResults(results As List(Of SearchResult))
+        lvFiles.Items.Clear()
+
+        ' Group results by directory
+        Dim groupedResults = results.GroupBy(Function(r) Path.GetDirectoryName(r.FilePath))
+
+        For Each group In groupedResults
+            ' Add directory header if multiple directories
+            If groupedResults.Count() > 1 Then
+                Dim dirItem = lvFiles.Items.Add($"📁 {group.Key}")
+                dirItem.ForeColor = Color.DarkBlue
+                dirItem.Font = New Font(dirItem.Font, FontStyle.Bold)
+            End If
+
+            For Each result In group
+                Dim iconIdx = GetIconIndex(result.FilePath, False)
+                Dim item As New ListViewItem(result.FileName, iconIdx)
+
+                ' Add file size
+                item.SubItems.Add(GetFileSizeText(result.FileSize))
+
+                ' Add match context or modified date
+                If result.MatchType = MatchType.FileContent Then
+                    item.SubItems.Add($"Line {result.LineNumber}: {result.MatchContext}")
+                    item.ForeColor = Color.DarkGreen
+                Else
+                    item.SubItems.Add(result.LastModified.ToString())
+                End If
+
+                item.Tag = result.FilePath
+                lvFiles.Items.Add(item)
+            Next
+        Next
+    End Sub
+
+    Private Function GetFileSizeText(bytes As Long) As String
+        If bytes < 1024 Then
+            Return $"{bytes} B"
+        ElseIf bytes < 1048576 Then
+            Return $"{bytes / 1024:F1} KB"
+        Else
+            Return $"{bytes / 1048576:F1} MB"
+        End If
+    End Function
+
+    Private Sub SearchTextBox_KeyPress(sender As Object, e As KeyPressEventArgs) Handles SearchTextBox.KeyPress
+        If e.KeyChar = ChrW(Keys.Return) Then
+            SearchButton.PerformClick()
+            e.Handled = True
+        End If
+    End Sub
+
+    Private Sub CancelSearchButton_Click(sender As Object, e As EventArgs)
+        _searchModule?.CancelSearch()
+        SearchButton.Enabled = True
+        SearchButton.Text = "Search"
+        SearchProgressBar.Visible = False
+        SearchStatusLabel.Text = "Search cancelled."
     End Sub
 
     ' This subroutine navigates the TreeView to a specific path

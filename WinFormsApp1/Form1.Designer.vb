@@ -26,6 +26,14 @@ Partial Class Form1
         ImageList1 = New ImageList(components)
         SplitContainer1 = New SplitContainer()
         Panel1 = New Panel()
+        SearchPanel = New Panel()
+        SearchTextBox = New TextBox()
+        SearchButton = New Button()
+        SearchOptionsPanel = New Panel()
+        SearchContentCheckBox = New CheckBox()
+        SearchPDFCheckBox = New CheckBox()
+        SearchProgressBar = New ProgressBar()
+        SearchStatusLabel = New Label()
         SplitContainer2 = New SplitContainer()
         tvFolders = New TreeView()
         lvFiles = New ListView()
@@ -38,6 +46,8 @@ Partial Class Form1
         SplitContainer1.Panel2.SuspendLayout()
         SplitContainer1.SuspendLayout()
         Panel1.SuspendLayout()
+        SearchPanel.SuspendLayout()
+        SearchOptionsPanel.SuspendLayout()
         CType(SplitContainer2, ComponentModel.ISupportInitialize).BeginInit()
         SplitContainer2.Panel1.SuspendLayout()
         SplitContainer2.Panel2.SuspendLayout()
@@ -68,20 +78,109 @@ Partial Class Form1
         SplitContainer1.SplitterDistance = 499
         SplitContainer1.TabIndex = 5
         '
+        ' SearchPanel
+        '
+        SearchPanel.BackColor = Color.White
+        SearchPanel.BorderStyle = BorderStyle.FixedSingle
+        SearchPanel.Controls.Add(SearchStatusLabel)
+        SearchPanel.Controls.Add(SearchProgressBar)
+        SearchPanel.Controls.Add(SearchOptionsPanel)
+        SearchPanel.Controls.Add(SearchButton)
+        SearchPanel.Controls.Add(SearchTextBox)
+        SearchPanel.Dock = DockStyle.Top
+        SearchPanel.Location = New Point(0, 0)
+        SearchPanel.Name = "SearchPanel"
+        SearchPanel.Size = New Size(499, 120)
+        SearchPanel.TabIndex = 11
+        '
+        ' SearchTextBox
+        '
+        SearchTextBox.Font = New Font("Segoe UI", 10F)
+        SearchTextBox.Location = New Point(10, 10)
+        SearchTextBox.Name = "SearchTextBox"
+        SearchTextBox.PlaceholderText = "Search files and content..."
+        SearchTextBox.Size = New Size(350, 25)
+        SearchTextBox.TabIndex = 0
+        '
+        ' SearchButton
+        '
+        SearchButton.BackColor = Color.SteelBlue
+        SearchButton.FlatStyle = FlatStyle.Flat
+        SearchButton.ForeColor = Color.White
+        SearchButton.Location = New Point(370, 10)
+        SearchButton.Name = "SearchButton"
+        SearchButton.Size = New Size(100, 25)
+        SearchButton.TabIndex = 1
+        SearchButton.Text = "Search"
+        SearchButton.UseVisualStyleBackColor = False
+        '
+        ' SearchOptionsPanel
+        '
+        SearchOptionsPanel.Controls.Add(SearchPDFCheckBox)
+        SearchOptionsPanel.Controls.Add(SearchContentCheckBox)
+        SearchOptionsPanel.Location = New Point(10, 40)
+        SearchOptionsPanel.Name = "SearchOptionsPanel"
+        SearchOptionsPanel.Size = New Size(460, 30)
+        SearchOptionsPanel.TabIndex = 2
+        '
+        ' SearchContentCheckBox
+        '
+        SearchContentCheckBox.AutoSize = True
+        SearchContentCheckBox.Checked = True
+        SearchContentCheckBox.CheckState = CheckState.Checked
+        SearchContentCheckBox.Location = New Point(5, 5)
+        SearchContentCheckBox.Name = "SearchContentCheckBox"
+        SearchContentCheckBox.Size = New Size(120, 20)
+        SearchContentCheckBox.TabIndex = 0
+        SearchContentCheckBox.Text = "Search in files"
+        SearchContentCheckBox.UseVisualStyleBackColor = True
+        '
+        ' SearchPDFCheckBox
+        '
+        SearchPDFCheckBox.AutoSize = True
+        SearchPDFCheckBox.Checked = True
+        SearchPDFCheckBox.CheckState = CheckState.Checked
+        SearchPDFCheckBox.Location = New Point(140, 5)
+        SearchPDFCheckBox.Name = "SearchPDFCheckBox"
+        SearchPDFCheckBox.Size = New Size(150, 20)
+        SearchPDFCheckBox.TabIndex = 1
+        SearchPDFCheckBox.Text = "Include PDF content"
+        SearchPDFCheckBox.UseVisualStyleBackColor = True
+        '
+        ' SearchProgressBar
+        '
+        SearchProgressBar.Location = New Point(10, 75)
+        SearchProgressBar.Name = "SearchProgressBar"
+        SearchProgressBar.Size = New Size(460, 10)
+        SearchProgressBar.Style = ProgressBarStyle.Marquee
+        SearchProgressBar.TabIndex = 3
+        SearchProgressBar.Visible = False
+        '
+        ' SearchStatusLabel
+        '
+        SearchStatusLabel.AutoSize = True
+        SearchStatusLabel.ForeColor = Color.DimGray
+        SearchStatusLabel.Location = New Point(10, 90)
+        SearchStatusLabel.Name = "SearchStatusLabel"
+        SearchStatusLabel.Size = New Size(100, 16)
+        SearchStatusLabel.TabIndex = 4
+        SearchStatusLabel.Text = ""
+        '
         ' Panel1
         '
         Panel1.BackColor = Color.LightSteelBlue
         Panel1.Controls.Add(SplitContainer2)
+        Panel1.Controls.Add(SearchPanel)
         Panel1.Dock = DockStyle.Fill
         Panel1.Location = New Point(0, 0)
         Panel1.Name = "Panel1"
         Panel1.Size = New Size(499, 689)
         Panel1.TabIndex = 0
-        ' 
+        '
         ' SplitContainer2
-        ' 
+        '
         SplitContainer2.Dock = DockStyle.Fill
-        SplitContainer2.Location = New Point(0, 0)
+        SplitContainer2.Location = New Point(0, 120)
         SplitContainer2.Name = "SplitContainer2"
         ' 
         ' SplitContainer2.Panel1
@@ -160,6 +259,10 @@ Partial Class Form1
         CType(SplitContainer1, ComponentModel.ISupportInitialize).EndInit()
         SplitContainer1.ResumeLayout(False)
         Panel1.ResumeLayout(False)
+        SearchPanel.ResumeLayout(False)
+        SearchPanel.PerformLayout()
+        SearchOptionsPanel.ResumeLayout(False)
+        SearchOptionsPanel.PerformLayout()
         SplitContainer2.Panel1.ResumeLayout(False)
         SplitContainer2.Panel2.ResumeLayout(False)
         CType(SplitContainer2, ComponentModel.ISupportInitialize).EndInit()
@@ -177,5 +280,13 @@ Partial Class Form1
     Friend WithEvents ColumnHeader3 As ColumnHeader
     Friend WithEvents tvFolders As TreeView
     Friend WithEvents SplitContainer2 As SplitContainer
+    Friend WithEvents SearchPanel As Panel
+    Friend WithEvents SearchTextBox As TextBox
+    Friend WithEvents SearchButton As Button
+    Friend WithEvents SearchOptionsPanel As Panel
+    Friend WithEvents SearchContentCheckBox As CheckBox
+    Friend WithEvents SearchPDFCheckBox As CheckBox
+    Friend WithEvents SearchProgressBar As ProgressBar
+    Friend WithEvents SearchStatusLabel As Label
 
 End Class
