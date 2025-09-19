@@ -182,15 +182,15 @@ Partial Class Form1
         SplitContainer2.Dock = DockStyle.Fill
         SplitContainer2.Location = New Point(0, 120)
         SplitContainer2.Name = "SplitContainer2"
-        ' 
+        '
         ' SplitContainer2.Panel1
-        ' 
+        '
         SplitContainer2.Panel1.Controls.Add(tvFolders)
-        ' 
+        '
         ' SplitContainer2.Panel2
-        ' 
+        '
         SplitContainer2.Panel2.Controls.Add(lvFiles)
-        SplitContainer2.Size = New Size(499, 689)
+        SplitContainer2.Size = New Size(499, 569)
         SplitContainer2.SplitterDistance = 200
         SplitContainer2.TabIndex = 10
         ' 
@@ -202,7 +202,7 @@ Partial Class Form1
         tvFolders.Location = New Point(0, 0)
         tvFolders.Name = "tvFolders"
         tvFolders.SelectedImageIndex = 0
-        tvFolders.Size = New Size(200, 689)
+        tvFolders.Size = New Size(200, 569)
         tvFolders.TabIndex = 6
         ' 
         ' lvFiles
@@ -212,7 +212,7 @@ Partial Class Form1
         lvFiles.LargeImageList = ImageList1
         lvFiles.Location = New Point(0, 0)
         lvFiles.Name = "lvFiles"
-        lvFiles.Size = New Size(295, 689)
+        lvFiles.Size = New Size(295, 569)
         lvFiles.SmallImageList = ImageList1
         lvFiles.TabIndex = 9
         lvFiles.UseCompatibleStateImageBehavior = False
