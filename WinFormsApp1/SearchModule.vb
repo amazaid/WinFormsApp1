@@ -273,8 +273,20 @@ Public Class SearchIndex
             cmd.CommandText = "CREATE INDEX IF NOT EXISTS idx_filename ON FileIndex(FileName)"
             cmd.ExecuteNonQuery()
 
-            cmd.CommandText = "CREATE VIRTUAL TABLE IF NOT EXISTS FileContent USING fts5(FilePath, Content)"
-            cmd.ExecuteNonQuery()
+            ' Try to create FTS5 table, fall back to FTS4 or FTS3 if not available
+            Try
+                cmd.CommandText = "CREATE VIRTUAL TABLE IF NOT EXISTS FileContent USING fts5(FilePath, Content)"
+                cmd.ExecuteNonQuery()
+            Catch ex As SQLiteException
+                Try
+                    ' Try FTS4
+                    cmd.CommandText = "CREATE VIRTUAL TABLE IF NOT EXISTS FileContent USING fts4(FilePath, Content)"
+                    cmd.ExecuteNonQuery()
+                Catch ex2 As SQLiteException
+                    ' Skip FTS table creation - will use LIKE queries instead
+                    Console.WriteLine("FTS not available, using standard search")
+                End Try
+            End Try
         End Using
     End Sub
 
@@ -292,11 +304,16 @@ Public Class SearchIndex
                 cmd.Parameters.AddWithValue("@indexed", DateTime.Now)
                 cmd.ExecuteNonQuery()
 
-                cmd.CommandText = "INSERT OR REPLACE INTO FileContent VALUES (@path, @content)"
-                cmd.Parameters.Clear()
-                cmd.Parameters.AddWithValue("@path", filePath)
-                cmd.Parameters.AddWithValue("@content", content)
-                cmd.ExecuteNonQuery()
+                ' Try to update FTS table if it exists
+                Try
+                    cmd.CommandText = "INSERT OR REPLACE INTO FileContent VALUES (@path, @content)"
+                    cmd.Parameters.Clear()
+                    cmd.Parameters.AddWithValue("@path", filePath)
+                    cmd.Parameters.AddWithValue("@content", content)
+                    cmd.ExecuteNonQuery()
+                Catch ex As SQLiteException
+                    ' FTS table doesn't exist, skip FTS indexing
+                End Try
             End Using
         Catch ex As Exception
             ' Handle indexing errors
@@ -308,11 +325,27 @@ Public Class SearchIndex
 
         Try
             Using cmd As New SQLiteCommand(_connection)
-                cmd.CommandText = "SELECT FilePath, FileName, FileSize, LastModified, snippet(FileContent, 1, '...', '...', '...', 20) as Context
-                                  FROM FileIndex
-                                  JOIN FileContent ON FileIndex.FilePath = FileContent.FilePath
-                                  WHERE FileContent MATCH @term
-                                  LIMIT 100"
+                ' First check if FTS table exists
+                cmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='FileContent'"
+                Dim ftsExists = cmd.ExecuteScalar() IsNot Nothing
+
+                If ftsExists Then
+                    ' Use FTS search
+                    cmd.CommandText = "SELECT FilePath, FileName, FileSize, LastModified, snippet(FileContent, 1, '...', '...', '...', 20) as Context
+                                      FROM FileIndex
+                                      JOIN FileContent ON FileIndex.FilePath = FileContent.FilePath
+                                      WHERE FileContent MATCH @term
+                                      LIMIT 100"
+                Else
+                    ' Fall back to LIKE search
+                    cmd.CommandText = "SELECT FilePath, FileName, FileSize, LastModified,
+                                      SUBSTR(Content, MAX(1, INSTR(LOWER(Content), LOWER(@term)) - 50), 150) as Context
+                                      FROM FileIndex
+                                      WHERE LOWER(Content) LIKE '%' || LOWER(@term) || '%'
+                                      OR LOWER(FileName) LIKE '%' || LOWER(@term) || '%'
+                                      LIMIT 100"
+                End If
+
                 cmd.Parameters.AddWithValue("@term", searchTerm)
 
                 Using reader = cmd.ExecuteReader()
@@ -323,13 +356,14 @@ Public Class SearchIndex
                             .FileSize = reader.GetInt64(2),
                             .LastModified = DateTime.Parse(reader.GetString(3)),
                             .MatchType = MatchType.FileContent,
-                            .MatchContext = reader.GetString(4)
+                            .MatchContext = If(reader.IsDBNull(4), "", reader.GetString(4))
                         })
                     End While
                 End Using
             End Using
         Catch ex As Exception
             ' Handle search errors
+            Console.WriteLine($"Search error: {ex.Message}")
         End Try
 
         Return results
