@@ -131,6 +131,8 @@ Public Class SearchModule
 
                 If extension = ".pdf" AndAlso searchPDFs Then
                     content = ExtractPDFText(filePath)
+                ElseIf IsOfficeFile(extension) Then
+                    content = ExtractOfficeText(filePath, extension)
                 ElseIf IsTextFile(extension) Then
                     content = File.ReadAllText(filePath)
                 End If
@@ -180,6 +182,29 @@ Public Class SearchModule
                              ".html", ".htm", ".css", ".js", ".ts", ".md",
                              ".yaml", ".yml", ".ini", ".log", ".bat", ".ps1"}
         Return textExtensions.Contains(extension.ToLower())
+    End Function
+
+    Private Function IsOfficeFile(extension As String) As Boolean
+        Dim officeExtensions = {".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx"}
+        Return officeExtensions.Contains(extension.ToLower())
+    End Function
+
+    Private Function ExtractOfficeText(filePath As String, extension As String) As String
+        Try
+            Select Case extension.ToLower()
+                Case ".doc", ".docx"
+                    Return OfficeConverter.ExtractTextFromWord(filePath)
+                Case ".xls", ".xlsx"
+                    Return OfficeConverter.ExtractTextFromExcel(filePath)
+                Case ".ppt", ".pptx"
+                    ' PowerPoint text extraction would require additional implementation
+                    Return ""
+                Case Else
+                    Return ""
+            End Select
+        Catch ex As Exception
+            Return ""
+        End Try
     End Function
 
     Private Function GetContextAroundMatch(content As String, matchIndex As Integer, matchLength As Integer) As String

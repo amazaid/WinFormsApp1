@@ -372,26 +372,79 @@ Public Class Form1
     End Sub
 
     Private Sub lvFiles_SelectedIndexChanged(sender As Object, e As EventArgs) Handles lvFiles.SelectedIndexChanged
-        ' Check if an item is selected in the ListView AND a folder is selected in the TreeView
-        If lvFiles.SelectedItems.Count > 0 AndAlso tvFolders.SelectedNode IsNot Nothing Then
+        ' Check if an item is selected in the ListView
+        If lvFiles.SelectedItems.Count > 0 Then
             ' Get the selected item from the ListView
             Dim selectedItem = lvFiles.SelectedItems(0)
-            Dim itemName = selectedItem.Text
+            Dim fullPath As String
 
-            ' Get the path of the parent folder from the TreeView's selected node
-            Dim folderPath = CStr(tvFolders.SelectedNode.Tag)
+            ' Check if this is a search result (has full path in Tag)
+            If selectedItem.Tag IsNot Nothing Then
+                fullPath = CStr(selectedItem.Tag)
+            ElseIf tvFolders.SelectedNode IsNot Nothing Then
+                ' Normal browsing - combine folder path with file name
+                Dim itemName = selectedItem.Text
+                Dim folderPath = CStr(tvFolders.SelectedNode.Tag)
+                fullPath = Path.Combine(folderPath, itemName)
+            Else
+                Return
+            End If
 
-            ' Combine the folder path and the item name to get the full path
-            Dim fullPath = Path.Combine(folderPath, itemName)
-
-            ' Now you can use the full path, for example, display it in the title bar
+            ' Update title and display the file
             Text = fullPath
-            WebView21.Source = New Uri(fullPath)
 
+            ' Check if file exists and handle different file types
+            If File.Exists(fullPath) Then
+                Dim extension = Path.GetExtension(fullPath).ToLower()
+
+                ' Handle Office documents
+                If IsOfficeDocument(extension) Then
+                    DisplayOfficeDocument(fullPath)
+                Else
+                    ' Display normally in WebView2
+                    WebView21.Source = New Uri(fullPath)
+                End If
+            Else
+                MessageBox.Show($"File not found: {fullPath}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            End If
         Else
             ' No item is selected, so clear the title bar
-            Text = "MyFileExplorer"
+            Text = "File Explorer - Enhanced Edition"
         End If
+    End Sub
+
+    Private Function IsOfficeDocument(extension As String) As Boolean
+        Dim officeExtensions = {".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx"}
+        Return officeExtensions.Contains(extension)
+    End Function
+
+    Private Sub DisplayOfficeDocument(filePath As String)
+        Try
+            Dim extension = Path.GetExtension(filePath).ToLower()
+            Dim htmlContent As String = ""
+
+            Select Case extension
+                Case ".docx", ".doc"
+                    htmlContent = ConvertWordToHtml(filePath)
+                Case ".xlsx", ".xls"
+                    htmlContent = ConvertExcelToHtml(filePath)
+                Case ".pptx", ".ppt"
+                    htmlContent = ConvertPowerPointToHtml(filePath)
+            End Select
+
+            If Not String.IsNullOrEmpty(htmlContent) Then
+                ' Create a temporary HTML file
+                Dim tempHtmlPath = Path.Combine(Path.GetTempPath(), $"preview_{Guid.NewGuid()}.html")
+                File.WriteAllText(tempHtmlPath, htmlContent)
+                WebView21.Source = New Uri(tempHtmlPath)
+            Else
+                ' Try to use Office Online viewer as fallback
+                Dim onlineViewerUrl = $"https://view.officeapps.live.com/op/view.aspx?src={Uri.EscapeDataString("file:///" & filePath.Replace("\", "/"))}"
+                WebView21.Source = New Uri(onlineViewerUrl)
+            End If
+        Catch ex As Exception
+            MessageBox.Show($"Cannot preview Office document: {ex.Message}", "Preview Error", MessageBoxButtons.OK, MessageBoxIcon.Information)
+        End Try
     End Sub
 
     Private Function GetIconIndex(path As String, isDirectory As Boolean) As Integer
