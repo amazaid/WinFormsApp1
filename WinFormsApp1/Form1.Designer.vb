@@ -67,9 +67,10 @@ Partial Class Form1
         SplitContainer1.Size = New Size(1352, 689)
         SplitContainer1.SplitterDistance = 499
         SplitContainer1.TabIndex = 5
-        ' 
+        '
         ' Panel1
-        ' 
+        '
+        Panel1.BackColor = Color.LightSteelBlue
         Panel1.Controls.Add(SplitContainer2)
         Panel1.Dock = DockStyle.Fill
         Panel1.Location = New Point(0, 0)
@@ -144,15 +145,16 @@ Partial Class Form1
         WebView21.Size = New Size(849, 689)
         WebView21.TabIndex = 2
         WebView21.ZoomFactor = 1R
-        ' 
+        '
         ' Form1
-        ' 
+        '
         AutoScaleDimensions = New SizeF(8F, 20F)
         AutoScaleMode = AutoScaleMode.Font
+        BackColor = Color.AliceBlue
         ClientSize = New Size(1352, 689)
         Controls.Add(SplitContainer1)
         Name = "Form1"
-        Text = "Form1"
+        Text = "File Explorer - Enhanced Edition"
         SplitContainer1.Panel1.ResumeLayout(False)
         SplitContainer1.Panel2.ResumeLayout(False)
         CType(SplitContainer1, ComponentModel.ISupportInitialize).EndInit()
